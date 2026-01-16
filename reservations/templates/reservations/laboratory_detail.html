@@ -1,0 +1,149 @@
+{% extends 'reservations/base.html' %}
+
+{% block title %}{{ laboratory.name }} - 实验室详情{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'reservations:laboratory_list' %}">实验室列表</a></li>
+                <li class="breadcrumb-item active">{{ laboratory.name }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-flask text-primary me-2"></i>{{ laboratory.name }}</h2>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <p><strong><i class="fas fa-map-marker-alt me-2"></i>位置：</strong>{{ laboratory.location }}</p>
+                        <p><strong><i class="fas fa-users me-2"></i>容量：</strong>{{ laboratory.capacity }} 人</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong><i class="fas fa-calendar-plus me-2"></i>创建时间：</strong>{{ laboratory.created_at|date:"Y-m-d" }}</p>
+                        <p><strong><i class="fas fa-check-circle me-2"></i>状态：</strong>
+                            {% if laboratory.is_active %}
+                                <span class="badge bg-success">可用</span>
+                            {% else %}
+                                <span class="badge bg-danger">不可用</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+                
+                {% if laboratory.description %}
+                    <div class="mb-3">
+                        <h5><i class="fas fa-info-circle me-2"></i>实验室描述</h5>
+                        <p>{{ laboratory.description }}</p>
+                    </div>
+                {% endif %}
+                
+                {% if laboratory.equipment %}
+                    <div class="mb-3">
+                        <h5><i class="fas fa-tools me-2"></i>设备信息</h5>
+                        <p>{{ laboratory.equipment }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 预约时间表 -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h4><i class="fas fa-calendar me-2"></i>未来7天预约情况</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>日期</th>
+                                <th>星期</th>
+                                <th>预约状态</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for date in future_dates %}
+                                <tr>
+                                    <td>{{ date|date:"Y-m-d" }}</td>
+                                    <td>{{ date|date:"l" }}</td>
+                                    <td>
+                                        {% with reserved_times=existing_reservations|dictsort:"date" %}
+                                            {% for reservation in reserved_times %}
+                                                {% if reservation.date == date %}
+                                                    <span class="badge bg-warning me-1">
+                                                        {{ reservation.start_time|time:"H:i" }}-{{ reservation.end_time|time:"H:i" }}
+                                                    </span>
+                                                {% endif %}
+                                            {% empty %}
+                                                <span class="text-success">全天可用</span>
+                                            {% endfor %}
+                                        {% endwith %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-calendar-plus me-2"></i>快速预约</h5>
+            </div>
+            <div class="card-body">
+                {% if user.is_authenticated %}
+                    {% if laboratory.is_active %}
+                        <p class="text-muted mb-3">点击下方按钮开始预约这个实验室</p>
+                        <a href="{% url 'reservations:make_reservation' laboratory.id %}" 
+                           class="btn btn-primary btn-lg w-100">
+                            <i class="fas fa-calendar-plus me-2"></i>立即预约
+                        </a>
+                    {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            该实验室暂时不可预约
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <p class="text-muted mb-3">您需要登录后才能预约实验室</p>
+                    <a href="{% url 'reservations:login' %}?next={% url 'reservations:make_reservation' laboratory.id %}" 
+                       class="btn btn-primary btn-lg w-100 mb-2">
+                        <i class="fas fa-sign-in-alt me-2"></i>登录预约
+                    </a>
+                    <a href="{% url 'reservations:register' %}" 
+                       class="btn btn-outline-primary w-100">
+                        <i class="fas fa-user-plus me-2"></i>注册账户
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 预约须知 -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle me-2"></i>预约须知</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>请提前至少1天预约</li>
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>预约需要管理员审核</li>
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>请按时使用，避免浪费资源</li>
+                    <li class="mb-2"><i class="fas fa-check text-success me-2"></i>使用完毕请及时清理</li>
+                    <li><i class="fas fa-check text-success me-2"></i>如需取消请提前通知</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

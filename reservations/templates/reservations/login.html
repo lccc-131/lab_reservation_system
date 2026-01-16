@@ -1,0 +1,69 @@
+{% extends 'reservations/base.html' %}
+
+{% block title %}用户登录 - 实验室预约系统{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-header text-center">
+                <h3><i class="fas fa-sign-in-alt me-2"></i>用户登录</h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="username" class="form-label">用户名</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="text" class="form-control" id="username" name="username" 
+                                   placeholder="请输入用户名" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">密码</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            <input type="password" class="form-control" id="password" name="password" 
+                                   placeholder="请输入密码" required>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt me-1"></i>登录
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                <p class="mb-0">还没有账户？ 
+                    <a href="{% url 'reservations:register' %}" class="text-decoration-none">
+                        <i class="fas fa-user-plus me-1"></i>立即注册
+                    </a>
+                </p>
+            </div>
+        </div>
+        
+        <!-- 演示账户信息 -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle me-2"></i>演示账户</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-2"><strong>管理员账户：</strong></p>
+                <ul class="list-unstyled mb-3">
+                    <li>用户名：admin</li>
+                    <li>密码：admin123</li>
+                </ul>
+                <p class="small text-muted">
+                    <i class="fas fa-shield-alt me-1"></i>
+                    管理员账户可以审核预约申请和管理系统
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

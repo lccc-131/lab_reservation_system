@@ -1,0 +1,198 @@
+{% extends 'reservations/base.html' %}
+
+{% block title %}预约管理 - 实验室预约系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-calendar-check me-2"></i>预约管理</h1>
+            <a href="{% url 'reservations:admin_panel' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i>返回管理面板
+            </a>
+        </div>
+
+        <!-- 状态筛选 -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="btn-group" role="group">
+                    <a href="{% url 'reservations:admin_reservations' %}?status=pending" 
+                       class="btn {% if status_filter == 'pending' %}btn-warning{% else %}btn-outline-warning{% endif %}">
+                        <i class="fas fa-clock me-1"></i>待审核
+                    </a>
+                    <a href="{% url 'reservations:admin_reservations' %}?status=approved" 
+                       class="btn {% if status_filter == 'approved' %}btn-success{% else %}btn-outline-success{% endif %}">
+                        <i class="fas fa-check me-1"></i>已批准
+                    </a>
+                    <a href="{% url 'reservations:admin_reservations' %}?status=rejected" 
+                       class="btn {% if status_filter == 'rejected' %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                        <i class="fas fa-times me-1"></i>已拒绝
+                    </a>
+                    <a href="{% url 'reservations:admin_reservations' %}?status=cancelled" 
+                       class="btn {% if status_filter == 'cancelled' %}btn-secondary{% else %}btn-outline-secondary{% endif %}">
+                        <i class="fas fa-ban me-1"></i>已取消
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {% if reservations %}
+            <div class="row">
+                {% for reservation in reservations %}
+                    <div class="col-lg-6 mb-4">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-user me-2"></i>{{ reservation.user.first_name|default:reservation.user.username }}
+                                    <small class="text-muted">({{ reservation.user.username }})</small>
+                                </h6>
+                                <span class="badge 
+                                    {% if reservation.status == 'pending' %}bg-warning
+                                    {% elif reservation.status == 'approved' %}bg-success
+                                    {% elif reservation.status == 'rejected' %}bg-danger
+                                    {% elif reservation.status == 'cancelled' %}bg-secondary
+                                    {% endif %}">
+                                    {{ reservation.get_status_display }}
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <p class="mb-2">
+                                            <i class="fas fa-flask me-1"></i>
+                                            <strong>实验室：</strong>{{ reservation.laboratory.name }}
+                                        </p>
+                                        <p class="mb-2">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            <strong>日期：</strong>{{ reservation.date|date:"Y-m-d" }}
+                                        </p>
+                                        <p class="mb-2">
+                                            <i class="fas fa-clock me-1"></i>
+                                            <strong>时间：</strong>{{ reservation.start_time|time:"H:i" }} - {{ reservation.end_time|time:"H:i" }}
+                                        </p>
+                                    </div>
+                                    <div class="col-6">
+                                        <p class="mb-2">
+                                            <i class="fas fa-map-marker-alt me-1"></i>
+                                            <strong>位置：</strong>{{ reservation.laboratory.location }}
+                                        </p>
+                                        <p class="mb-2">
+                                            <i class="fas fa-paper-plane me-1"></i>
+                                            <strong>申请时间：</strong>{{ reservation.created_at|date:"m-d H:i" }}
+                                        </p>
+                                        {% if reservation.user.userprofile %}
+                                            <p class="mb-2">
+                                                <i class="fas fa-graduation-cap me-1"></i>
+                                                <strong>学号：</strong>{{ reservation.user.userprofile.student_id }}
+                                            </p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                {% if reservation.purpose %}
+                                    <div class="mt-2">
+                                        <strong><i class="fas fa-comment me-1"></i>使用目的：</strong>
+                                        <p class="text-muted mb-0">{{ reservation.purpose }}</p>
+                                    </div>
+                                {% endif %}
+                                
+                                {% if reservation.admin_comment %}
+                                    <div class="mt-2">
+                                        <strong><i class="fas fa-user-shield me-1"></i>管理员备注：</strong>
+                                        <p class="text-muted mb-0">{{ reservation.admin_comment }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">
+                                        <i class="fas fa-clock me-1"></i>
+                                        更新时间：{{ reservation.updated_at|date:"m-d H:i" }}
+                                    </small>
+                                    
+                                    {% if reservation.status == 'pending' %}
+                                        <div>
+                                            <button type="button" class="btn btn-success btn-sm me-2" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#approveModal{{ reservation.id }}">
+                                                <i class="fas fa-check me-1"></i>批准
+                                            </button>
+                                            <button type="button" class="btn btn-danger btn-sm" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#rejectModal{{ reservation.id }}">
+                                                <i class="fas fa-times me-1"></i>拒绝
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- 批准确认模态框 -->
+                                        <div class="modal fade" id="approveModal{{ reservation.id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">确认批准预约</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>您确定要批准以下预约申请吗？</p>
+                                                        <ul>
+                                                            <li><strong>用户：</strong>{{ reservation.user.first_name|default:reservation.user.username }}</li>
+                                                            <li><strong>实验室：</strong>{{ reservation.laboratory.name }}</li>
+                                                            <li><strong>日期：</strong>{{ reservation.date|date:"Y-m-d" }}</li>
+                                                            <li><strong>时间：</strong>{{ reservation.start_time|time:"H:i" }} - {{ reservation.end_time|time:"H:i" }}</li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                                        <a href="{% url 'reservations:approve_reservation' reservation.id %}" 
+                                                           class="btn btn-success">
+                                                            <i class="fas fa-check me-1"></i>确认批准
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- 拒绝确认模态框 -->
+                                        <div class="modal fade" id="rejectModal{{ reservation.id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">确认拒绝预约</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>您确定要拒绝以下预约申请吗？</p>
+                                                        <ul>
+                                                            <li><strong>用户：</strong>{{ reservation.user.first_name|default:reservation.user.username }}</li>
+                                                            <li><strong>实验室：</strong>{{ reservation.laboratory.name }}</li>
+                                                            <li><strong>日期：</strong>{{ reservation.date|date:"Y-m-d" }}</li>
+                                                            <li><strong>时间：</strong>{{ reservation.start_time|time:"H:i" }} - {{ reservation.end_time|time:"H:i" }}</li>
+                                                        </ul>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                                        <a href="{% url 'reservations:reject_reservation' reservation.id %}" 
+                                                           class="btn btn-danger">
+                                                            <i class="fas fa-times me-1"></i>确认拒绝
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+                <h3 class="text-muted">暂无{{ status_filter|default:"待审核" }}的预约</h3>
+                <p class="text-muted">当前没有需要处理的预约申请</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

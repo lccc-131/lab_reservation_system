@@ -1,0 +1,163 @@
+{% extends 'reservations/base.html' %}
+
+{% block title %}管理员面板 - 实验室预约系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1><i class="fas fa-cog me-2"></i>管理员面板</h1>
+        <p class="text-muted">欢迎使用实验室预约管理系统</p>
+    </div>
+</div>
+
+<!-- 统计卡片 -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ pending_count }}</h4>
+                        <p class="card-text">待审核预约</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'reservations:admin_reservations' %}?status=pending" class="text-white text-decoration-none">
+                    查看详情 <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ total_labs }}</h4>
+                        <p class="card-text">实验室总数</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-flask fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="/admin/reservations/laboratory/" class="text-white text-decoration-none">
+                    管理实验室 <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ total_users }}</h4>
+                        <p class="card-text">注册用户</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="/admin/auth/user/" class="text-white text-decoration-none">
+                    管理用户 <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 快速操作 -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-tasks me-2"></i>预约管理</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">管理用户的预约申请，审核、批准或拒绝预约。</p>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'reservations:admin_reservations' %}?status=pending" class="btn btn-warning">
+                        <i class="fas fa-clock me-1"></i>待审核预约 ({{ pending_count }})
+                    </a>
+                    <a href="{% url 'reservations:admin_reservations' %}?status=approved" class="btn btn-success">
+                        <i class="fas fa-check me-1"></i>已批准预约
+                    </a>
+                    <a href="{% url 'reservations:admin_reservations' %}?status=rejected" class="btn btn-danger">
+                        <i class="fas fa-times me-1"></i>已拒绝预约
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-cogs me-2"></i>系统管理</h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">管理实验室信息、用户账户和系统设置。</p>
+                <div class="d-grid gap-2">
+                    <a href="/admin/reservations/laboratory/" class="btn btn-primary">
+                        <i class="fas fa-flask me-1"></i>管理实验室
+                    </a>
+                    <a href="/admin/reservations/timeslot/" class="btn btn-info">
+                        <i class="fas fa-clock me-1"></i>管理时间段
+                    </a>
+                    <a href="/admin/auth/user/" class="btn btn-secondary">
+                        <i class="fas fa-users me-1"></i>管理用户
+                    </a>
+                    <a href="/admin/" class="btn btn-dark">
+                        <i class="fas fa-cog me-1"></i>Django管理后台
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 最近活动 -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-history me-2"></i>系统说明</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-info-circle me-2"></i>功能说明</h6>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>用户可以浏览和搜索实验室</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>用户可以提交预约申请</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>系统自动检测预约冲突</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>管理员可以审核预约申请</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>用户可以查看和取消自己的预约</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-user-shield me-2"></i>管理员权限</h6>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><i class="fas fa-check text-primary me-2"></i>审核用户预约申请</li>
+                            <li class="mb-2"><i class="fas fa-check text-primary me-2"></i>管理实验室信息</li>
+                            <li class="mb-2"><i class="fas fa-check text-primary me-2"></i>管理用户账户</li>
+                            <li class="mb-2"><i class="fas fa-check text-primary me-2"></i>查看系统统计信息</li>
+                            <li class="mb-2"><i class="fas fa-check text-primary me-2"></i>配置系统设置</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

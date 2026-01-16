@@ -1,0 +1,177 @@
+{% extends 'reservations/base.html' %}
+
+{% block title %}预约 {{ laboratory.name }} - 实验室预约系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'reservations:laboratory_list' %}">实验室列表</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'reservations:laboratory_detail' laboratory.id %}">{{ laboratory.name }}</a></li>
+                <li class="breadcrumb-item active">预约</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-calendar-plus me-2"></i>预约 {{ laboratory.name }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="post" id="reservationForm">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.date.id_for_label }}" class="form-label">{{ form.date.label }}</label>
+                            {{ form.date }}
+                            {% if form.date.errors %}
+                                <div class="text-danger">{{ form.date.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.start_time.id_for_label }}" class="form-label">{{ form.start_time.label }}</label>
+                            {{ form.start_time }}
+                            {% if form.start_time.errors %}
+                                <div class="text-danger">{{ form.start_time.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.end_time.id_for_label }}" class="form-label">{{ form.end_time.label }}</label>
+                            {{ form.end_time }}
+                            {% if form.end_time.errors %}
+                                <div class="text-danger">{{ form.end_time.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.purpose.id_for_label }}" class="form-label">{{ form.purpose.label }}</label>
+                        {{ form.purpose }}
+                        {% if form.purpose.errors %}
+                            <div class="text-danger">{{ form.purpose.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 可用性检查结果 -->
+                    <div id="availabilityResult" class="mb-3" style="display: none;"></div>
+                    
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'reservations:laboratory_detail' laboratory.id %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>返回
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="fas fa-paper-plane me-1"></i>提交预约申请
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle me-2"></i>实验室信息</h5>
+            </div>
+            <div class="card-body">
+                <h6>{{ laboratory.name }}</h6>
+                <p class="text-muted mb-2">
+                    <i class="fas fa-map-marker-alt me-1"></i>{{ laboratory.location }}
+                </p>
+                <p class="text-muted mb-2">
+                    <i class="fas fa-users me-1"></i>容量：{{ laboratory.capacity }} 人
+                </p>
+                {% if laboratory.description %}
+                    <p class="small">{{ laboratory.description|truncatewords:20 }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6><i class="fas fa-clock me-2"></i>预约流程</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-2">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 30px; height: 30px;">
+                        <small>1</small>
+                    </div>
+                    <span>填写预约信息</span>
+                </div>
+                <div class="d-flex align-items-center mb-2">
+                    <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 30px; height: 30px;">
+                        <small>2</small>
+                    </div>
+                    <span>等待管理员审核</span>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center me-3" style="width: 30px; height: 30px;">
+                        <small>3</small>
+                    </div>
+                    <span>审核通过，按时使用</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 设置日期输入的最小值为今天
+    const dateInput = document.getElementById('{{ form.date.id_for_label }}');
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.setAttribute('min', today);
+    
+    // 实时检查预约可用性
+    function checkAvailability() {
+        const labId = {{ laboratory.id }};
+        const date = dateInput.value;
+        const startTime = document.getElementById('{{ form.start_time.id_for_label }}').value;
+        const endTime = document.getElementById('{{ form.end_time.id_for_label }}').value;
+        
+        if (date && startTime && endTime) {
+            fetch(`{% url 'reservations:check_availability' %}?lab_id=${labId}&date=${date}&start_time=${startTime}&end_time=${endTime}`)
+                .then(response => response.json())
+                .then(data => {
+                    const resultDiv = document.getElementById('availabilityResult');
+                    const submitBtn = document.getElementById('submitBtn');
+                    
+                    resultDiv.style.display = 'block';
+                    
+                    if (data.available) {
+                        resultDiv.innerHTML = `<div class="alert alert-success"><i class="fas fa-check-circle me-2"></i>${data.message}</div>`;
+                        submitBtn.disabled = false;
+                    } else {
+                        resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>${data.message}</div>`;
+                        submitBtn.disabled = true;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+    }
+    
+    // 绑定事件监听器
+    dateInput.addEventListener('change', checkAvailability);
+    document.getElementById('{{ form.start_time.id_for_label }}').addEventListener('change', checkAvailability);
+    document.getElementById('{{ form.end_time.id_for_label }}').addEventListener('change', checkAvailability);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,243 @@
+{% extends 'reservations/base.html' %}
+
+{% block title %}实验室列表 - 实验室预约系统{% endblock %}
+
+{% block content %}
+
+<section class="hero-banner">
+    <div class="container">
+        <div class="row justify-content-center text-center">
+            <div class="col-lg-8 hero-content fade-in">
+                <h1 class="hero-title">
+                   江科大实验室预约系统 
+                </h1>
+                <p class="hero-subtitle">
+                    江苏科技大学张家港校区实验室预约系统，为学生群体提供便捷服务
+                </p>
+                <div class="hero-buttons">
+                    {% if user.is_authenticated %}
+                        <a href="#laboratories" class="btn btn-light btn-lg">
+                            <i class="fas fa-search me-2"></i>浏览实验室
+                        </a>
+                        <a href="{% url 'reservations:my_reservations' %}" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-calendar-check me-2"></i>我的预约
+                        </a>
+                    {% else %}
+                        <a href="{% url 'reservations:login' %}" class="btn btn-light btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i>立即登录
+                        </a>
+                        <a href="{% url 'reservations:register' %}" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-user-plus me-2"></i>注册账户
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 搜索区域 -->
+<section class="search-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <form method="get" class="d-flex gap-3 mb-4" id="searchForm">
+                    <input type="text" name="search" class="form-control search-box flex-grow-1"
+                           placeholder="🔍 搜索实验室名称、位置或设备..." value="{{ search_query }}">
+                    <input type="hidden" name="category" value="{{ category_filter }}">
+                    <button type="submit" class="btn search-btn">
+                        <i class="fas fa-search me-2"></i>搜索
+                    </button>
+                </form>
+
+                <!-- 分类筛选器 -->
+                <div class="category-filter mb-4">
+                    <h6 class="mb-3"><i class="fas fa-filter me-2"></i>按科目筛选</h6>
+                    <div class="category-buttons d-flex flex-wrap gap-2">
+                        <button class="btn category-btn {% if not category_filter %}active{% endif %}"
+                                data-category="">
+                            <i class="fas fa-th-large me-1"></i>全部 ({{ total_count }})
+                        </button>
+                        {% for category_code, category_info in category_counts.items %}
+                            <button class="btn category-btn {% if category_filter == category_code %}active{% endif %}"
+                                    data-category="{{ category_code }}">
+                                <i class="fas fa-circle me-1" style="color: {{ category_info.color }}"></i>
+                                {{ category_info.name }} ({{ category_info.count }})
+                            </button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {% if search_query or category_filter %}
+                    <div class="text-center">
+                        <span class="text-muted">
+                            {% if search_query and category_filter %}
+                                搜索 "{{ search_query }}" 在 "{{ category_filter }}" 分类中的结果，共找到 {{ laboratories.count }} 个实验室
+                            {% elif search_query %}
+                                搜索 "{{ search_query }}" 的结果，共找到 {{ laboratories.count }} 个实验室
+                            {% elif category_filter %}
+                                "{{ category_filter }}" 分类的实验室，共 {{ laboratories.count }} 个
+                            {% endif %}
+                        </span>
+                        <a href="{% url 'reservations:laboratory_list' %}" class="btn btn-sm btn-outline-secondary ms-2">
+                            <i class="fas fa-times me-1"></i>清除筛选
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 实验室列表 -->
+<section id="laboratories" class="py-5">
+    <div class="container">
+        {% if laboratories %}
+            <div class="row g-4">
+                {% for lab in laboratories %}
+                    <div class="col-lg-4 col-md-6">
+                        <div class="lab-card fade-in">
+                            <!-- 卡片头部 -->
+                            <div class="lab-card-header">
+                                <div class="lab-icon" style="background: linear-gradient(135deg, {{ lab.get_category_color }}, {{ lab.get_category_color }}dd);">
+                                    <i class="{{ lab.get_category_icon }}"></i>
+                                </div>
+                                <h3 class="lab-card-title">{{ lab.name }}</h3>
+                                <p class="lab-card-location">
+                                    <i class="fas fa-map-marker-alt me-1"></i>{{ lab.location }}
+                                </p>
+                                <span class="category-badge" style="background-color: {{ lab.get_category_color }};">
+                                    {{ lab.get_category_display }}
+                                </span>
+                            </div>
+
+                            <!-- 卡片内容 -->
+                            <div class="lab-card-body">
+                                <div class="lab-info-item">
+                                    <i class="fas fa-users"></i>
+                                    <span><strong>容量：</strong>{{ lab.capacity }} 人</span>
+                                </div>
+
+                                {% if lab.description %}
+                                    <div class="lab-info-item">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span>{{ lab.description|truncatewords:12 }}</span>
+                                    </div>
+                                {% endif %}
+
+                                {% if lab.equipment %}
+                                    <div class="lab-info-item">
+                                        <i class="fas fa-tools"></i>
+                                        <span>{{ lab.equipment|truncatewords:8 }}</span>
+                                    </div>
+                                {% endif %}
+
+                                <div class="lab-info-item">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span class="badge bg-success">可预约</span>
+                                </div>
+                            </div>
+
+                            <!-- 卡片底部 -->
+                            <div class="lab-card-footer">
+                                <div class="d-grid gap-2">
+                                    {% if user.is_authenticated %}
+                                        <a href="{% url 'reservations:make_reservation' lab.id %}"
+                                           class="btn btn-primary btn-modern">
+                                            <i class="fas fa-calendar-plus me-2"></i>立即预约
+                                        </a>
+                                        <a href="{% url 'reservations:laboratory_detail' lab.id %}"
+                                           class="btn btn-outline-secondary btn-modern">
+                                            <i class="fas fa-eye me-2"></i>查看详情
+                                        </a>
+                                    {% else %}
+                                        <a href="{% url 'reservations:login' %}?next={% url 'reservations:make_reservation' lab.id %}"
+                                           class="btn btn-primary btn-modern">
+                                            <i class="fas fa-sign-in-alt me-2"></i>登录预约
+                                        </a>
+                                        <a href="{% url 'reservations:laboratory_detail' lab.id %}"
+                                           class="btn btn-outline-secondary btn-modern">
+                                            <i class="fas fa-eye me-2"></i>查看详情
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <!-- 空状态 -->
+            <div class="text-center py-5">
+                <div class="mb-4">
+                    <i class="fas fa-search fa-4x text-muted mb-3"></i>
+                    <h3 class="text-muted">没有找到实验室</h3>
+                    {% if search_query %}
+                        <p class="text-muted mb-4">请尝试其他搜索关键词或查看所有可用实验室</p>
+                        <a href="{% url 'reservations:laboratory_list' %}" class="btn btn-primary btn-modern">
+                            <i class="fas fa-list me-2"></i>查看所有实验室
+                        </a>
+                    {% else %}
+                        <p class="text-muted mb-4">暂时没有可用的实验室，请稍后再试</p>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- 功能介绍区域 -->
+{% if not user.is_authenticated %}
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <h2 class="mb-4">
+                    <i class="fas fa-info-circle me-2 text-primary"></i>开始使用实验室预约系统
+                </h2>
+                <p class="lead text-muted mb-4">
+                    注册账户后即可享受便捷的实验室预约服务，支持在线申请、状态查询和预约管理
+                </p>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <div class="lab-icon mx-auto mb-3" style="width: 60px; height: 60px;">
+                                <i class="fas fa-search"></i>
+                            </div>
+                            <h5>浏览实验室</h5>
+                            <p class="text-muted small">查看详细的实验室信息和设备配置</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <div class="lab-icon mx-auto mb-3" style="width: 60px; height: 60px;">
+                                <i class="fas fa-calendar-plus"></i>
+                            </div>
+                            <h5>在线预约</h5>
+                            <p class="text-muted small">选择合适的时间段提交预约申请</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <div class="lab-icon mx-auto mb-3" style="width: 60px; height: 60px;">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <h5>状态跟踪</h5>
+                            <p class="text-muted small">实时查看预约状态和审核结果</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{% url 'reservations:login' %}" class="btn btn-primary btn-lg btn-modern">
+                        <i class="fas fa-sign-in-alt me-2"></i>立即登录
+                    </a>
+                    <a href="{% url 'reservations:register' %}" class="btn btn-outline-primary btn-lg btn-modern">
+                        <i class="fas fa-user-plus me-2"></i>注册账户
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endblock %}
