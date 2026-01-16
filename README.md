@@ -1,0 +1,2 @@
+# lab_reservation_system
+为解决实验室资源管理分散、预约流程不透明等问题，开发基于浏览器架构的Web应用程序，采用python+Django快速开发，达成资源透明化管理与智能化分配
